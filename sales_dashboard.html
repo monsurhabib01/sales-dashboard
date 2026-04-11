@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Dashboard 2023</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --accent: #00e5ff;
+    --accent2: #ff6b35;
+    --accent3: #a259ff;
+    --text: #f0f0f8;
+    --muted: #6b6b85;
+    --border: #2a2a3a;
+    --green: #00ff88;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    animation: fadeDown 0.6s ease forwards;
+  }
+
+  .header-left h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent3) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header-left p {
+    color: var(--muted);
+    font-size: 0.75rem;
+    margin-top: 4px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .badge {
+    background: rgba(0,229,255,0.1);
+    border: 1px solid rgba(0,229,255,0.3);
+    color: var(--accent);
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.6s ease forwards;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+
+  .kpi-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+  }
+
+  .kpi-card:nth-child(2)::before { background: linear-gradient(90deg, var(--accent2), var(--accent)); }
+  .kpi-card:nth-child(3)::before { background: linear-gradient(90deg, var(--accent3), var(--accent2)); }
+
+  .kpi-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 12px;
+  }
+
+  .kpi-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .kpi-sub {
+    font-size: 0.7rem;
+    color: var(--green);
+    margin-top: 6px;
+  }
+
+  /* Charts Grid */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .charts-grid-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    animation: fadeUp 0.8s ease forwards;
+    transition: border-color 0.3s;
+  }
+
+  .chart-card:hover { border-color: rgba(0,229,255,0.3); }
+
+  .chart-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .chart-title::before {
+    content: '';
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .chart-card:nth-child(2) .chart-title::before { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
+  .chart-card:nth-child(3) .chart-title::before { background: var(--accent3); box-shadow: 0 0 8px var(--accent3); }
+
+  canvas { max-height: 260px; }
+
+  /* Top products list */
+  .product-list { margin-top: 4px; }
+
+  .product-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .product-item:last-child { border-bottom: none; }
+
+  .product-name {
+    font-size: 0.75rem;
+    color: var(--text);
+  }
+
+  .product-bar-wrap {
+    flex: 1;
+    margin: 0 16px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .product-bar {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    transition: width 1s ease;
+  }
+
+  .product-val {
+    font-size: 0.7rem;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 24px 0 8px;
+    color: var(--muted);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+    .charts-grid { grid-template-columns: 1fr; }
+    .charts-grid-bottom { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-left">
+      <h1>Sales Dashboard</h1>
+      <p>Annual Performance Report · FY 2023</p>
+    </div>
+    <div class="badge">● Live Data</div>
+  </header>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value">$1.09M</div>
+      <div class="kpi-sub">↑ 1,253 orders processed</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Orders</div>
+      <div class="kpi-value">1,253</div>
+      <div class="kpi-sub">↑ Across 5 regions</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Order Value</div>
+      <div class="kpi-value">$870</div>
+      <div class="kpi-sub">↑ Electronics dominant</div>
+    </div>
+  </div>
+
+  <!-- Main Charts -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Monthly Revenue Trend</div>
+      <canvas id="monthlyChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Revenue by Category</div>
+      <canvas id="categoryChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Bottom Charts -->
+  <div class="charts-grid-bottom">
+    <div class="chart-card">
+      <div class="chart-title">Revenue by Region</div>
+      <canvas id="regionChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Payment Methods</div>
+      <canvas id="paymentChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Top Products</div>
+      <div class="product-list" id="productList"></div>
+    </div>
+  </div>
+
+  <footer>Mohammad Monsur Habib · Data Analyst Portfolio · 2023 Sales Data</footer>
+</div>
+
+<script>
+Chart.defaults.color = '#6b6b85';
+Chart.defaults.borderColor = '#2a2a3a';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 11;
+
+const accent = '#00e5ff';
+const accent2 = '#ff6b35';
+const accent3 = '#a259ff';
+const green = '#00ff88';
+
+// Monthly Revenue
+new Chart(document.getElementById('monthlyChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    datasets: [{
+      label: 'Revenue ($)',
+      data: [68324.51, 121816.73, 123688.19, 82236.38, 81121.06, 86111.50, 94495.29, 106460.30, 98617.41, 82269.31, 90964.35, 55017.59],
+      backgroundColor: 'rgba(0,229,255,0.15)',
+      borderColor: accent,
+      borderWidth: 1.5,
+      borderRadius: 3,
+      hoverBackgroundColor: 'rgba(0,229,255,0.3)',
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        grid: { color: '#1a1a24' },
+        ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'K' }
+      },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// Category Donut
+new Chart(document.getElementById('categoryChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Electronics', 'Accessories', 'Office'],
+    datasets: [{
+      data: [880123.74, 177180.67, 33818.21],
+      backgroundColor: ['rgba(0,229,255,0.8)', 'rgba(162,89,255,0.8)', 'rgba(255,107,53,0.8)'],
+      borderColor: '#0a0a0f',
+      borderWidth: 3,
+      hoverOffset: 8
+    }]
+  },
+  options: {
+    responsive: true,
+    cutout: '65%',
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { padding: 16, usePointStyle: true, pointStyleWidth: 8 }
+      }
+    }
+  }
+});
+
+// Region Bar
+new Chart(document.getElementById('regionChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Central', 'East', 'West', 'South', 'North'],
+    datasets: [{
+      data: [271899.15, 241486.20, 216331.59, 206013.13, 155392.55],
+      backgroundColor: [
+        'rgba(0,229,255,0.7)', 'rgba(162,89,255,0.7)',
+        'rgba(255,107,53,0.7)', 'rgba(0,255,136,0.7)', 'rgba(255,200,0,0.7)'
+      ],
+      borderRadius: 3,
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        grid: { color: '#1a1a24' },
+        ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'K' }
+      },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+// Payment Pie
+new Chart(document.getElementById('paymentChart'), {
+  type: 'pie',
+  data: {
+    labels: ['Bank Transfer', 'Cash', 'PayPal', 'Credit Card', 'Debit Card'],
+    datasets: [{
+      data: [295, 244, 242, 241, 231],
+      backgroundColor: [
+        'rgba(0,229,255,0.8)', 'rgba(162,89,255,0.8)',
+        'rgba(255,107,53,0.8)', 'rgba(0,255,136,0.8)', 'rgba(255,200,0,0.8)'
+      ],
+      borderColor: '#0a0a0f',
+      borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { padding: 10, usePointStyle: true, pointStyleWidth: 8, font: { size: 10 } }
+      }
+    }
+  }
+});
+
+// Top Products
+const products = [
+  { name: 'Laptop', val: 592741 },
+  { name: 'Monitor', val: 242444 },
+  { name: 'Headphones', val: 72148 },
+  { name: 'Webcam', val: 44938 },
+  { name: 'Keyboard', val: 33438 },
+];
+const max = products[0].val;
+const list = document.getElementById('productList');
+products.forEach(p => {
+  const pct = (p.val / max * 100).toFixed(0);
+  list.innerHTML += `
+    <div class="product-item">
+      <span class="product-name">${p.name}</span>
+      <div class="product-bar-wrap">
+        <div class="product-bar" style="width:${pct}%"></div>
+      </div>
+      <span class="product-val">$${(p.val/1000).toFixed(0)}K</span>
+    </div>`;
+});
+</script>
+</body>
+</html>
